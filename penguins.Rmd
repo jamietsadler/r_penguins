@@ -1,0 +1,26 @@
+---
+title: "Penguins"
+output: html_notebook
+---
+
+```{r}
+penguins <- read.csv("penguins.csv")
+head(penguins)
+```
+```{r}
+install.packages("ggplot2")
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(penguins, aes(x=Sex)) + geom_bar()
+```
+```{r}
+str(penguins)
+```
+
+```{r}
+ggplot(penguins, aes(x=Culmen.Length..mm., fill=Species)) + geom_histogram(bins=25, position = "dodge")
+```
+
