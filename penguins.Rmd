@@ -7,20 +7,69 @@ output: html_notebook
 penguins <- read.csv("penguins.csv")
 head(penguins)
 ```
+
 ```{r}
-install.packages("ggplot2")
+library("dplyr")
 ```
 
 
 ```{r}
-library(ggplot2)
-ggplot(penguins, aes(x=Sex)) + geom_bar()
+glimpse(penguins)
 ```
 ```{r}
 str(penguins)
 ```
 
 ```{r}
-ggplot(penguins, aes(x=Culmen.Length..mm., fill=Species)) + geom_histogram(bins=25, position = "dodge")
+is.numeric(penguins$Culmen.Depth..mm.)
+```
+```{r}
+mean(penguins$Culmen.Depth..mm.)
+```
+Check for duplicated rows.
+
+```{r}
+sum(duplicated(penguins))
+```
+
+```{r}
+library(ggplot2)
+ggplot(penguins, aes(x=Sex)) + geom_bar()
+```
+
+```{r}
+sapply(penguins, function(x) sum(is.na(x)))
+```
+
+
+```{r}
+glimpse(penguins)
+```
+
+```{r}
+ggplot(penguins, aes(x=Flipper.Length..mm., fill=Species)) + 
+  geom_histogram(bins=25, position = "dodge")
+```
+
+
+```{r}
+ggplot(penguins, aes(x=Body.Mass..g., fill=Species)) + 
+  geom_histogram(bins=25, position = "dodge")
+```
+
+```{r}
+ggplot(penguins, aes(x=Flipper.Length..mm., fill=Species)) + 
+  geom_boxplot() +
+  coord_flip()
+```
+```{r}
+species <- penguins %>% 
+  group_by(Species) %>%
+  summarize(mean())
+```
+
+
+```{r}
+head(species)
 ```
 
