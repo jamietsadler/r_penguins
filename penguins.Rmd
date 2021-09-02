@@ -2,7 +2,7 @@
 title: "Penguins"
 output: html_notebook
 ---
-
+# Load & Inspect Data
 ```{r}
 penguins <- read.csv("penguins.csv")
 head(penguins)
@@ -24,7 +24,7 @@ str(penguins)
 is.numeric(penguins$Culmen.Depth..mm.)
 ```
 ```{r}
-mean(penguins$Culmen.Depth..mm.)
+mean(penguins$Culmen.Depth..mm., na.rm=TRUE)
 ```
 Check for duplicated rows.
 
@@ -36,16 +36,59 @@ sum(duplicated(penguins))
 library(ggplot2)
 ggplot(penguins, aes(x=Sex)) + geom_bar()
 ```
-
+#### Look at misssing values 
 ```{r}
 sapply(penguins, function(x) sum(is.na(x)))
 ```
+```{r}
+summary(penguins)
+```
+```{r}
+list_na <- colnames(penguins)[ apply(penguins, 2, anyNA) ]
+list_na
+```
+```{r}
+n_distinct(penguins$Stage, na.rm = FALSE)
+```
 
+#### Omit missing values
+
+```{r}
+# penguins <- penguins %>% na.omit()
+# dim(penguins)
+```
+Causes too much data to be lost
+```{r}
+class(penguins[3,11])
+```
+Drop comments column
+
+```{r}
+drop <- c("Comments", "Stage", "Region")
+penguins = penguins[,!(names(penguins) %in% drop)]
+```
+Omit na values
+
+```{r}
+penguins <- penguins %>% na.omit()
+dim(penguins)
+```
+```{r}
+sapply(penguins, function(x) sum(is.na(x)))
+```
+#### All null values now removed
+
+```{r}
+penguins %>% count(Species)
+```
+```{r}
+cor(penguins$Flipper.Length..mm, penguins$Culmen.Length..mm.)
+```
 
 ```{r}
 glimpse(penguins)
 ```
-
+## Create visualisations for further EDA
 ```{r}
 ggplot(penguins, aes(x=Flipper.Length..mm., fill=Species)) + 
   geom_histogram(bins=25, position = "dodge")
@@ -62,14 +105,86 @@ ggplot(penguins, aes(x=Flipper.Length..mm., fill=Species)) +
   geom_boxplot() +
   coord_flip()
 ```
+
 ```{r}
-species <- penguins %>% 
-  group_by(Species) %>%
-  summarize(mean())
+ggplot(penguins, aes(x=Body.Mass..g., y=Flipper.Length..mm., color=Species)) + 
+  geom_point()
+```
+```{r}
+ggplot(penguins, aes(x=Culmen.Length..mm., y=Flipper.Length..mm., size=Body.Mass..g., color=Species)) + 
+  geom_point() + 
+  geom_smooth(method="lm", se=FALSE) +
+  labs(title="Flipper Length by Culmen Length, coloured by Species and mass shown by point size", x="Culmen Length (mm)", y="Flipper Length (mm)")
+```
+```{r}
+ggplot(penguins, aes(x=Culmen.Length..mm., y=Flipper.Length..mm.)) +
+  geom_point() + 
+  facet_wrap(~ Species)
+```
+
+## Model Building
+#### Start with basic tree models
+```{r}
+#install.packages("tidymodels")
+library(tidymodels)
+```
+#### Simple Linear Model
+```{r}
+names(penguins)
+```
+
+which column only has one factor?
+```{r}
+which(sapply(penguins, function(x) (is.character(x) | is.factor(x)) & length(unique(x))<2))
+```
+column incldued in drop list
+
+```{r}
+#install.packages("caret")
+library(caret)
+set.seed(3456)
+
+```
+
+Get train and test data
+
+```{r}
+dt = sort(sample(nrow(penguins), nrow(penguins)*.7))
+train<-penguins[dt,]
+test<-penguins[-dt,]
+```
+
+```{r}
+lm_model <- lm(Culmen.Length..mm. ~ ., data = train)
+```
+
+```{r}
+lm_preds <- predict(lm_model, test)
+```
+
+```{r}
+ # Random seed for reproducibility
+set.seed(100)
+# Create 10 folds of penguins
+penguin_folds <- vfold_cv(train, v = 10)
 ```
 
 
+build initial model
 ```{r}
-head(species)
+tree_model <- decision_tree(tree_depth = 4, cost_complexity = 0.05) %>%
+    set_mode("regression")
 ```
+
+```{r}
+tree_model <- model %>% set_engine("rpart")
+```
+
+```{r}
+fits_cv <- fit_resamples(tree_model,
+                         Culmen.Length..mm. ~ .,
+                         resamples = penguin_folds,
+                         metrics = metric_set(mae, rmse))
+```
+
 
